@@ -4,6 +4,9 @@
 
 #include <QStandardItemModel>
 #include <QDate>
+#include <QFile>
+#include <QTextStream>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -22,13 +25,14 @@ MainWindow::MainWindow(QWidget *parent)
      ui->tableView->setSortingEnabled(true);
      ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-
+     loadTransactions();
 
 
 }
 
 MainWindow::~MainWindow()
 {
+    saveTransactions();
     delete ui;
 }
 
@@ -70,3 +74,50 @@ void MainWindow::deleteTransaction()
         model->removeRow(index.row());
     }
 }
+
+// тут все для збергання
+void MainWindow::loadTransactions()
+{
+    QFile file("finans.csv");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, "Помилка", "Не вдалося відкрити файл finans.csv для читання.");
+        return;
+    }
+
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        QStringList fields = line.split(',');
+
+        if (fields.size() == 3) { // Перевірка на правильність формату
+            QList<QStandardItem *> row;
+            row.append(new QStandardItem(fields[0])); // Опис
+            row.append(new QStandardItem(fields[1])); // Сума
+            row.append(new QStandardItem(fields[2])); // Дата
+            model->appendRow(row);
+        }
+    }
+
+    file.close();
+}
+
+void MainWindow::saveTransactions()
+{
+    QFile file("finans.csv");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, "Помилка", "Не вдалося відкрити файл finans.csv для запису.");
+        return;
+    }
+
+    QTextStream out(&file);
+    for (int row = 0; row < model->rowCount(); ++row) {
+        QStringList fields;
+        fields.append(model->item(row, 0)->text()); // Опис
+        fields.append(model->item(row, 1)->text()); // Сума
+        fields.append(model->item(row, 2)->text()); // Дата
+        out << fields.join(',') << "\n";
+    }
+
+    file.close();
+}
+

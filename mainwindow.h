@@ -30,6 +30,10 @@ private slots:
 
 private:
 
+
+    void loadTransactions();
+    void saveTransactions();
+
     Ui::MainWindow *ui;
 
     QStandardItemModel *model;
